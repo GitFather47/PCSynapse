@@ -1,25 +1,24 @@
 import subprocess
 import sys
-import platform
-import socket
-import pandas as pd
-import streamlit as st
 
 # Upgrade pip
 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
 
 # Continue with the rest of your imports
-import pythoncom
-import cpuinfo
-import psutil
-import wmi
+import pandas as pd
+import streamlit as st
 
 # Conditional imports for Windows-specific packages
 if sys.platform == 'win32':
     try:
+        import pythoncom
+        pythoncom.CoInitialize()
+        import wmi
         import win32com.client
     except ImportError:
-        st.warning("Required Windows module (win32com) not found.")
+        st.warning("Required Windows modules not found. Please ensure pywin32 and wmi are installed.")
+
+# Your Streamlit app code here
         
 # Function to get system information
 def get_system_info():
