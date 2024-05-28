@@ -220,7 +220,6 @@ def get_video_info():
                 if all(key in info for key in ["Name", "VideoProcessor", "AdapterRAM", "DriverVersion"]):
                     video_info.append(info)
     except Exception as e:
-        video_info.append({"Error
         video_info.append({"Error": str(e)})
     return video_info
 
