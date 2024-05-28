@@ -1,4 +1,3 @@
-import platform
 import cpuinfo
 import psutil
 import streamlit as st

@@ -1,9 +1,0 @@
-platform
-cpuinfo
-psutil
-streamlit
-subprocess
-socket
-pandas
-wmi
-pythoncom
