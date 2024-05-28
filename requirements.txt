@@ -2,5 +2,6 @@ py-cpuinfo
 psutil
 streamlit
 pandas
-wmi; 
+wmi;
+pythoncom
 pywin32; sys_platform == 'win32'
