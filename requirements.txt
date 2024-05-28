@@ -3,5 +3,4 @@ psutil
 streamlit
 pandas
 wmi
-pythoncom
 pywin32; sys_platform == 'win32'
