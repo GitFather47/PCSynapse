@@ -1,5 +1,9 @@
 import subprocess
 import sys
+import platform
+import psutil
+import socket
+import cpuinfo
 
 # Upgrade pip
 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
@@ -11,15 +15,15 @@ import streamlit as st
 # Conditional imports for Windows-specific packages
 if sys.platform == 'win32':
     try:
-        import pythoncom
-        pythoncom.CoInitialize()
+        import ctypes
+        ctypes.windll.ole32.CoInitialize(None)
         import wmi
         import win32com.client
     except ImportError:
         st.warning("Required Windows modules not found. Please ensure pywin32 and wmi are installed.")
 
 # Your Streamlit app code here
-        
+
 # Function to get system information
 def get_system_info():
     system_info = platform.uname()
@@ -50,8 +54,6 @@ def get_system_info():
         "OpenGL Version": opengl_version  # Add OpenGL Version to the dictionary
     }
 
-
-
 # Function to get audio information (Windows specific)
 def get_audio_info():
     audio_info = {}
@@ -63,7 +65,6 @@ def get_audio_info():
     except Exception as e:
         audio_info['Error'] = str(e)
     return audio_info
-
 
 # Function to get CPU information
 def get_cpu_info():
@@ -134,14 +135,13 @@ def get_disk_info():
     combined_info = {
         "Total Space (GB)": f"{total_space / (1024**3):.2f}",
         "Used Space (GB)": f"{used_space / (1024**3):.2f}",
-        "Free Space (GB)": f"{free_space / (1024**3):.2f}",
+        "Free Space (GB)": f"{free_space / (1024**3)::.2f}",
         "Usage (%)": f"{(used_space / total_space) * 100:.1f}" if total_space > 0 else "N/A"
     }
 
     return disk_info, combined_info
 
 # Function to get BIOS information (Windows specific)
-
 def get_bios_info():
     bios_info = {"Category": [], "Information": []}
     try:
@@ -220,10 +220,9 @@ def get_video_info():
                 if all(key in info for key in ["Name", "VideoProcessor", "AdapterRAM", "DriverVersion"]):
                     video_info.append(info)
     except Exception as e:
+        video_info.append({"Error
         video_info.append({"Error": str(e)})
     return video_info
-
-
 
 # Function to get monitor information (using PowerShell)
 def get_monitor_info():
@@ -256,7 +255,7 @@ def display_info():
     peripherals_info = get_peripherals_info()
     video_info = get_video_info()
     monitor_info = get_monitor_info()
-    audio_info = get_audio_info()  
+    audio_info = get_audio_info()
 
     # Center tables and adjust font sizes
     custom_css = """
@@ -271,7 +270,6 @@ def display_info():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
-
     st.subheader("Overall Information")
     overall_info_data = {
         "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Audio", "Motherboard", "Mouse", "Keyboard"],
@@ -282,7 +280,7 @@ def display_info():
             f"Total Space: {combined_disk_info['Total Space (GB)']} GB<br>"
             f"Used Space: {combined_disk_info['Used Space (GB)']} GB<br>"
             f"Free Space: {combined_disk_info['Free Space (GB)']} GB<br>"
-                f"Usage: {combined_disk_info['Usage (%)']}%",
+            f"Usage: {combined_disk_info['Usage (%)']}%",
             audio_info.get("Audio Device", "N/A"), 
             motherboard_info.get("Product", "N/A"), 
             peripherals_info.get("Mouse", "N/A"),
@@ -310,7 +308,6 @@ def display_info():
 
     st.subheader("BIOS Information")
     bios_info_df = pd.DataFrame(bios_info, index=[0, 0])
-
     st.markdown(bios_info_df.to_html(index=False), unsafe_allow_html=True)
 
     st.subheader("Network Information")
@@ -336,10 +333,10 @@ def display_info():
     for monitor in monitor_info:
         monitor_info_df = pd.DataFrame(monitor.items(), columns=["Category", "Information"])
         st.markdown(monitor_info_df.to_html(index=False), unsafe_allow_html=True)
+
 def display_home():
     st.markdown("<div style='text-align:center'><h1 style='font-family:Ink Free; font-size: 54px;'>PC Synapse 💻</h1></div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align:center'><marquee behavior='scroll' direction='left'><h3 style='font-family: Lucida Handwriting, cursive; font-style: italic;'>Get your PC info today!!!</h3></marquee></div>", unsafe_allow_html=True)
-
 
     image_path = "home_page.jpg"
     st.image(image_path, use_column_width=True)
@@ -363,7 +360,6 @@ def display_about():
     Email: openworld41@gmail.com
     """)
 
-
 def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio("Go to", ["Home", "About"])
@@ -374,7 +370,7 @@ def main():
         display_about()
 
     if sys.platform == 'win32':
-        pythoncom.CoUninitialize()  # Uninitialize COM
+        ctypes.windll.ole32.CoUninitialize()  # Uninitialize COM
 
 if __name__ == "__main__":
     main()
