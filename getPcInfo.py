@@ -9,6 +9,7 @@ import streamlit as st
 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
 
 # Continue with the rest of your imports
+import pythoncom
 import cpuinfo
 import psutil
 import wmi
@@ -16,13 +17,10 @@ import wmi
 # Conditional imports for Windows-specific packages
 if sys.platform == 'win32':
     try:
-        import pythoncom
-        pythoncom.CoInitialize()
         import win32com.client
     except ImportError:
-        st.warning("Required Windows modules (pythoncom, win32com) not found. Some features may not be available.")
-
-
+        st.warning("Required Windows module (win32com) not found.")
+        
 # Function to get system information
 def get_system_info():
     system_info = platform.uname()
