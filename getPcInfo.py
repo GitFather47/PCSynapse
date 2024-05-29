@@ -160,15 +160,15 @@ def display_info():
         "Information": [
             system_info.get("System", "N/A"), 
             cpu_info.get("CPU Name", "N/A"), 
-            memory_info.get("Total Memory (GB)", "N/A"), 
-            Space: {combined_disk_info['Total Space (GB)']} GB<br>"
+            memory_info.get("Total Memory (GB)", "N/A"),
+    combined_disk_info["Total Space (GB)"],
             f"Used Space: {combined_disk_info['Used Space (GB)']} GB<br>"
             f"Free Space: {combined_disk_info['Free Space (GB)']} GB<br>"
             f"Usage: {combined_disk_info['Usage (%)']}%",
-            f"Manufacturer: {motherboard_info['Manufacturer']}<br>"
-            f"Product: {motherboard_info['Product']}<br>"
-            f"Version: {motherboard_info['Version']}<br>"
-            f"SerialNumber: {motherboard_info['SerialNumber']}"
+            motherboard_info["Manufacturer"],
+            motherboard_info["Product"],
+            bios_info["Version"],
+            bios_info["Vendor"]
         ]
     }
     overall_info_df = pd.DataFrame(overall_info_data)
@@ -191,7 +191,7 @@ def display_info():
     st.markdown(disk_info_df.to_html(index=False), unsafe_allow_html=True)
 
     st.subheader("BIOS Information")
-    bios_info_df = pd.DataFrame(bios_info, index=[0, 0])
+    bios_info_df = pd.DataFrame(bios_info.items(), columns=["Category", "Information"])
     st.markdown(bios_info_df.to_html(index=False), unsafe_allow_html=True)
 
     st.subheader("Network Information")
@@ -244,4 +244,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
