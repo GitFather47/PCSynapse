@@ -154,7 +154,7 @@ def display_info():
     bios_info = pad_array(bios_info, max_length)
 
     # Create DataFrame for overall information
-        overall_info_data = {
+    overall_info_data = {
         "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Motherboard"],
         "Information": [
             system_info.get("System", "N/A"),
