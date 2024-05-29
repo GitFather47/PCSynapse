@@ -136,7 +136,7 @@ def get_disk_info():
         "Total Space (GB)": f"{total_space / (1024**3):.2f}",
         "Used Space (GB)": f"{used_space / (1024**3):.2f}",
         "Free Space (GB)": f"{free_space / (1024**3)::.2f}",
-        "Usage (%)": f"{(used_space / total_space) * 100:.1f}" if total_space > 0 else "N/A
+        "Usage (%)": f"{(used_space / total_space) * 100:.1f}" if total_space > 0 else "N/A"
 
     }
 
