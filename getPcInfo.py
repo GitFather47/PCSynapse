@@ -169,13 +169,13 @@ def display_info():
         "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Motherboard"],
         "Information": [
             system_info_list[0].get("System", "N/A"),  # Access the first dictionary in the list
-            cpu_info.get("CPU Name", "N/A"),
-            memory_info.get("Total Memory (GB)", "N/A"),
+            cpu_info[0].get("CPU Name", "N/A"),  # Access the first dictionary in the list
+            memory_info[0].get("Total Memory (GB)", "N/A"),  # Access the first dictionary in the list
             f"Total Space: {combined_disk_info['Total Space (GB)']} GB<br>"
             f"Used Space: {combined_disk_info['Used Space (GB)']} GB<br>"
             f"Free Space: {combined_disk_info['Free Space (GB)']} GB<br>"
             f"Usage: {combined_disk_info['Usage (%)']}%",
-            motherboard_info.get("Manufacturer", "N/A"),
+            motherboard_info[0].get("Manufacturer", "N/A"),  # Access the first dictionary in the list
             # Add missing values here for alignment
         ]
     }
