@@ -132,15 +132,14 @@ def get_disk_info():
         }
         disk_info.append(disk_entry)
 
-       combined_info = {
-            "Total Space (GB)": f"{total_space / (1024**3):.2f}",
-            "Used Space (GB)": f"{used_space / (1024**3):.2f}",
-            "Free Space (GB)": f"{free_space / (1024**3):.2f}",
-            "Usage (%)": f"{(used_space / total_space) * 100:.1f}" if total_space > 0 else "N/A"
-        }
+    combined_info = {
+        "Total Space (GB)": f"{total_space / (1024**3):.2f}",
+        "Used Space (GB)": f"{used_space / (1024**3):.2f}",
+        "Free Space (GB)": f"{free_space / (1024**3):.2f}",
+        "Usage (%)": f"{(used_space / total_space) * 100:.1f}" if total_space > 0 else "N/A"
+    }
 
     return disk_info, combined_info
-
 
 # Function to get BIOS information (Windows specific)
 def get_bios_info():
