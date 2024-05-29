@@ -168,7 +168,7 @@ def display_info():
     overall_info_data = {
         "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Motherboard"],
         "Information": [
-            system_info_list.get("System", "N/A"),
+            system_info_list[0].get("System", "N/A"),  # Access the first dictionary in the list
             cpu_info.get("CPU Name", "N/A"),
             memory_info.get("Total Memory (GB)", "N/A"),
             f"Total Space: {combined_disk_info['Total Space (GB)']} GB<br>"
