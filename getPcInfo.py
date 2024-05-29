@@ -159,17 +159,24 @@ def get_bios_info():
         bios_info["Information"].extend([str(e)] * 2)
     return bios_info
 
+
 # Function to get network information
 def get_network_info():
     net_info = psutil.net_if_addrs()
     formatted_net_info = {}
+    
+    af_link = socket.AF_PACKET if hasattr(socket, 'AF_PACKET') else psutil.AF_LINK  # Adjust for platform differences
+
     for interface, addrs in net_info.items():
         for addr in addrs:
-            if addr.family == socket.AF_LINK:
+            if addr.family == af_link:
                 formatted_net_info.setdefault(interface, {})["MAC Address"] = addr.address
             elif addr.family == socket.AF_INET:
                 formatted_net_info.setdefault(interface, {})["IP Address"] = addr.address
     return formatted_net_info
+
+# Continue with other functions and main application code
+
 
 # Function to get motherboard information (Windows specific)
 def get_motherboard_info():
