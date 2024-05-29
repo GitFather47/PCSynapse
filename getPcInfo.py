@@ -203,9 +203,12 @@ def display_info():
 
 def pad_array(arr, length):
     """Pad array with N/A values to match specified length."""
-    while len(arr) < length:
-        arr.append("N/A")
-    return arr
+    if isinstance(arr, list):
+        while len(arr) < length:
+            arr.append("N/A")
+        return arr
+    else:
+        return ["N/A"] * length
 
 def display_home():
     st.markdown("<div style='text-align:center'><h1 style='font-family:Ink Free; font-size: 54px;'>PC Synapse 💻</h1></div>", unsafe_allow_html=True)
