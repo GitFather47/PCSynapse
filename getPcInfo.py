@@ -155,8 +155,8 @@ def get_bios_info():
                 bios_info["Category"].append(prop.strip())  # Strip leading/trailing whitespace
                 bios_info["Information"].append(value.strip())  # Strip leading/trailing whitespace
     except Exception as e:
-        bios_info["Property"].extend(["Manufacturer", "SMBIOSBIOSVersion"])
-        bios_info["Value"].extend([str(e)] * 2)
+        bios_info["Category"].extend(["Manufacturer", "SMBIOSBIOSVersion"])
+        bios_info["Information"].extend([str(e)] * 2)
     return bios_info
 
 # Function to get network information
