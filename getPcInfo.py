@@ -1,7 +1,8 @@
+import platform
 import cpuinfo
 import psutil
 import streamlit as st
-import platform
+import subprocess
 import socket
 import pandas as pd
 import wmi
@@ -11,21 +12,36 @@ pythoncom.CoInitialize()
 # Function to get system information
 def get_system_info():
     system_info = platform.uname()
-    user_info = platform.node()
-    product_id = platform.machine()
-    opengl_version = platform.processor()
+    user_info = subprocess.check_output('whoami').decode().strip()
+    # Retrieve product ID (Windows specific)
+    product_id = ""
+    opengl_version = ""
+    try:
+        wmi_obj = wmi.WMI()
+        for os in wmi_obj.Win32_OperatingSystem():
+            product_id = os.SerialNumber
+            break
+        for item in wmi_obj.Win32_OperatingSystem():
+            directx_version = item.OSArchitecture
+            opengl_version = item.Version
+    except Exception as e:
+        product_id = str(e)
 
     return {
         "System": system_info.system,
-        "Device Name": user_info,
+        "Device Name": system_info.node,
         "Release": system_info.release,
         "Version": system_info.version,
-        "Machine": product_id,
-        "Processor": opengl_version
+        "Machine": system_info.machine,
+        "Processor": system_info.processor,
+        "User Name": user_info,
+        "Product ID": product_id,  # Add product ID to the dictionary
+        "OpenGL Version": opengl_version  # Add OpenGL Version to the dictionary
     }
 
 
-# Function to get audio information
+
+# Function to get audio information (Windows specific)
 def get_audio_info():
     audio_info = {}
     try:
@@ -128,8 +144,8 @@ def get_bios_info():
                 bios_info["Category"].append(prop.strip())  # Strip leading/trailing whitespace
                 bios_info["Information"].append(value.strip())  # Strip leading/trailing whitespace
     except Exception as e:
-        bios_info["Category"].extend(["Manufacturer", "SMBIOSBIOSVersion"])
-        bios_info["Information"].extend([str(e)] * 2)
+        bios_info["Property"].extend(["Manufacturer", "SMBIOSBIOSVersion"])
+        bios_info["Value"].extend([str(e)] * 2)
     return bios_info
 
 # Function to get network information
@@ -158,17 +174,14 @@ def get_motherboard_info():
         motherboard_info['Error'] = str(e)
     return motherboard_info
 
-# Function to get connected peripherals (Mouse, Keyboard, etc.)
+# Function to get connected peripherals (Mouse, Keyboard, etc.) (Windows specific)
 def get_peripherals_info():
     peripherals_info = {}
     try:
-        wmi_obj = wmi.WMI()
-        for mouse in wmi_obj.Win32_PointingDevice():
-            peripherals_info['Mouse'] = mouse.Name
-            break  # Only need information from one mouse device
-        for keyboard in wmi_obj.Win32_Keyboard():
-            peripherals_info['Keyboard'] = keyboard.Name
-            break  # Only need information from one keyboard device
+        result = subprocess.check_output("wmic path Win32_PointingDevice get Name", shell=True).decode().strip()
+        peripherals_info['Mouse'] = result.split('\n')[1].strip()
+        result = subprocess.check_output("wmic path Win32_Keyboard get Name", shell=True).decode().strip()
+        peripherals_info['Keyboard'] = result.split('\n')[1].strip()
     except Exception as e:
         peripherals_info['Error'] = str(e)
     return peripherals_info
@@ -177,34 +190,45 @@ def get_peripherals_info():
 def get_video_info():
     video_info = []
     try:
-        wmi_obj = wmi.WMI()
-        for video in wmi_obj.Win32_VideoController():
-            video_entry = {
-                "Name": video.Name,
-                "Video Processor": video.VideoProcessor,
-                "Adapter RAM (GB)": f"{int(video.AdapterRAM) / (1024**3):.2f}",
-                "Driver Version": video.DriverVersion
-            }
-            video_info.append(video_entry)
+        result = subprocess.check_output(["powershell", "-Command", 
+            "Get-WmiObject Win32_VideoController | Select-Object Name,VideoProcessor,AdapterRAM,DriverVersion | Format-List"], shell=True).decode().strip()
+        blocks = result.split("\n\n")
+        for block in blocks:
+            info = {}
+            for line in block.split("\n"):
+                if line.strip():
+                    key, value = line.split(":", 1)
+                    key = key.strip()
+                    value = value.strip()
+                    # Handling empty or missing fields
+                    if key == "AdapterRAM" and value:
+                        value = f"{int(value) / (1024**3):.2f} GB"
+                    info[key] = value
+            if info:
+                # Check if all required keys are present
+                if all(key in info for key in ["Name", "VideoProcessor", "AdapterRAM", "DriverVersion"]):
+                    video_info.append(info)
     except Exception as e:
         video_info.append({"Error": str(e)})
     return video_info
 
 
 
-# Function to get monitor information
+# Function to get monitor information (using PowerShell)
 def get_monitor_info():
     monitor_info = []
     try:
-        wmi_obj = wmi.WMI()
-        for monitor in wmi_obj.Win32_DesktopMonitor():
-            monitor_entry = {
-                "Name": monitor.Name,
-                "Screen Height": monitor.ScreenHeight,
-                "Screen Width": monitor.ScreenWidth,
-                "Status": monitor.Status
-            }
-            monitor_info.append(monitor_entry)
+        result = subprocess.check_output(["powershell", "-Command", 
+            "Get-WmiObject Win32_DesktopMonitor | Select-Object Name,ScreenHeight,ScreenWidth,Status | Format-List"], shell=True).decode().strip()
+        blocks = result.split("\n\n")
+        for block in blocks:
+            info = {}
+            for line in block.split("\n"):
+                if line.strip():
+                    key, value = line.split(":", 1)
+                    info[key.strip()] = value.strip()
+            if info:
+                monitor_info.append(info)
     except Exception as e:
         monitor_info.append({"Error": str(e)})
     return monitor_info
@@ -342,4 +366,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
