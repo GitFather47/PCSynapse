@@ -12,17 +12,100 @@ subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip
 import pandas as pd
 import streamlit as st
 
-# Conditional imports for Windows-specific packages
-if sys.platform == 'win32':
+# Function to get BIOS information (using subprocess for cross-platform compatibility)
+def get_bios_info():
+    bios_info = {"Category": [], "Information": []}
     try:
-        import ctypes
-        ctypes.windll.ole32.CoInitialize(None)
-        import wmi
-        import win32com.client
-    except ImportError:
-        st.warning("Required Windows modules not found. Please ensure pywin32 and wmi are installed.")
+        result = subprocess.check_output("dmidecode -t bios", shell=True).decode().strip()
+        lines = result.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Vendor:") or line.startswith("Version:"):
+                prop, _, value = line.partition(':')
+                bios_info["Category"].append(prop.strip())
+                bios_info["Information"].append(value.strip())
+    except Exception as e:
+        bios_info["Category"].extend(["Vendor", "Version"])
+        bios_info["Information"].extend([str(e)] * 2)
+    return bios_info
 
-# Your Streamlit app code here
+# Function to get audio information (using subprocess for cross-platform compatibility)
+def get_audio_info():
+    audio_info = {}
+    try:
+        result = subprocess.check_output("lspci -nn | grep -i audio", shell=True).decode().strip()
+        if result:
+            audio_info["Audio Device"] = result.split(':')[2].strip()
+        else:
+            audio_info["Audio Device"] = "N/A"
+    except Exception as e:
+        audio_info['Error'] = str(e)
+    return audio_info
+
+# Function to get motherboard information (using subprocess for cross-platform compatibility)
+def get_motherboard_info():
+    motherboard_info = {}
+    try:
+        result = subprocess.check_output("dmidecode -t baseboard", shell=True).decode().strip()
+        lines = result.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Manufacturer:") or line.startswith("Product:") or line.startswith("Version:"):
+                prop, _, value = line.partition(':')
+                motherboard_info[prop.strip()] = value.strip()
+    except Exception as e:
+        motherboard_info['Error'] = str(e)
+    return motherboard_info
+
+# Function to get connected peripherals (Mouse, Keyboard, etc.) (using subprocess for cross-platform compatibility)
+def get_peripherals_info():
+    peripherals_info = {}
+    try:
+        result = subprocess.check_output("lsusb", shell=True).decode().strip()
+        if result:
+            peripherals_info['Mouse'] = "Detected" if "Mouse" in result else "N/A"
+            peripherals_info['Keyboard'] = "Detected" if "Keyboard" in result else "N/A"
+        else:
+            peripherals_info['Mouse'] = "N/A"
+            peripherals_info['Keyboard'] = "N/A"
+    except Exception as e:
+        peripherals_info['Error'] = str(e)
+    return peripherals_info
+
+# Function to get video information (using subprocess for cross-platform compatibility)
+def get_video_info():
+    video_info = []
+    try:
+        result = subprocess.check_output("lspci -nn | grep -i vga", shell=True).decode().strip()
+        if result:
+            info = {}
+            info["Name"] = result.split(':')[2].strip()
+            video_info.append(info)
+        else:
+            video_info.append({"Error": "Video controller not found"})
+    except Exception as e:
+        video_info.append({"Error": str(e)})
+    return video_info
+
+# Function to get monitor information (using subprocess for cross-platform compatibility)
+def get_monitor_info():
+    monitor_info = []
+    try:
+        result = subprocess.check_output("xrandr --listmonitors", shell=True).decode().strip()
+        lines = result.split('\n')
+        for line in lines[1:]:
+            info = {}
+            values = line.split()
+            info["Name"] = values[3]
+            info["Screen Height"] = values[5]
+            info["Screen Width"] = values[7]
+            info["Status"] = values[8]
+            monitor_info.append(info)
+    except Exception as e:
+        monitor_info.append({"Error": str(e)})
+    return monitor_info
+
+# Continue with other functions and main application code
 
 # Function to get system information
 def get_system_info():
@@ -54,17 +137,6 @@ def get_system_info():
         "OpenGL Version": opengl_version  # Add OpenGL Version to the dictionary
     }
 
-# Function to get audio information (Windows specific)
-def get_audio_info():
-    audio_info = {}
-    try:
-        wmi_obj = wmi.WMI()
-        for controller in wmi_obj.Win32_SoundDevice():
-            audio_info["Audio Device"] = controller.Name
-            break  # Only need information from one audio device
-    except Exception as e:
-        audio_info['Error'] = str(e)
-    return audio_info
 
 # Function to get CPU information
 def get_cpu_info():
@@ -141,23 +213,7 @@ def get_disk_info():
 
     return disk_info, combined_info
 
-# Function to get BIOS information (Windows specific)
-def get_bios_info():
-    bios_info = {"Category": [], "Information": []}
-    try:
-        result = subprocess.check_output("wmic bios get /value", shell=True).decode().strip()
-        lines = result.split('\n')
-        properties = ["Manufacturer", "SMBIOSBIOSVersion"]
-        for line in lines:
-            line = line.rstrip('\r')  # Strip '\r' character
-            prop, _, value = line.partition('=')
-            if prop in properties:
-                bios_info["Category"].append(prop.strip())  # Strip leading/trailing whitespace
-                bios_info["Information"].append(value.strip())  # Strip leading/trailing whitespace
-    except Exception as e:
-        bios_info["Category"].extend(["Manufacturer", "SMBIOSBIOSVersion"])
-        bios_info["Information"].extend([str(e)] * 2)
-    return bios_info
+
 
 
 # Function to get network information
@@ -174,80 +230,6 @@ def get_network_info():
             elif addr.family == socket.AF_INET:
                 formatted_net_info.setdefault(interface, {})["IP Address"] = addr.address
     return formatted_net_info
-
-# Continue with other functions and main application code
-
-
-# Function to get motherboard information (Windows specific)
-def get_motherboard_info():
-    motherboard_info = {}
-    try:
-        wmi_obj = wmi.WMI()
-        for board in wmi_obj.Win32_BaseBoard():
-            motherboard_info["Manufacturer"] = board.Manufacturer
-            motherboard_info["Product"] = board.Product
-            motherboard_info["Version"] = board.Version
-            motherboard_info["SerialNumber"] = board.SerialNumber
-    except Exception as e:
-        motherboard_info['Error'] = str(e)
-    return motherboard_info
-
-# Function to get connected peripherals (Mouse, Keyboard, etc.) (Windows specific)
-def get_peripherals_info():
-    peripherals_info = {}
-    try:
-        result = subprocess.check_output("wmic path Win32_PointingDevice get Name", shell=True).decode().strip()
-        peripherals_info['Mouse'] = result.split('\n')[1].strip()
-        result = subprocess.check_output("wmic path Win32_Keyboard get Name", shell=True).decode().strip()
-        peripherals_info['Keyboard'] = result.split('\n')[1].strip()
-    except Exception as e:
-        peripherals_info['Error'] = str(e)
-    return peripherals_info
-
-# Function to get video information (using PowerShell)
-def get_video_info():
-    video_info = []
-    try:
-        result = subprocess.check_output(["powershell", "-Command", 
-            "Get-WmiObject Win32_VideoController | Select-Object Name,VideoProcessor,AdapterRAM,DriverVersion | Format-List"], shell=True).decode().strip()
-        blocks = result.split("\n\n")
-        for block in blocks:
-            info = {}
-            for line in block.split("\n"):
-                if line.strip():
-                    key, value = line.split(":", 1)
-                    key = key.strip()
-                    value = value.strip()
-                    # Handling empty or missing fields
-                    if key == "AdapterRAM" and value:
-                        value = f"{int(value) / (1024**3):.2f} GB"
-                    info[key] = value
-            if info:
-                # Check if all required keys are present
-                if all(key in info for key in ["Name", "VideoProcessor", "AdapterRAM", "DriverVersion"]):
-                    video_info.append(info)
-    except Exception as e:
-        video_info.append({"Error": str(e)})
-    return video_info
-
-# Function to get monitor information (using PowerShell)
-def get_monitor_info():
-    monitor_info = []
-    try:
-        result = subprocess.check_output(["powershell", "-Command", 
-            "Get-WmiObject Win32_DesktopMonitor | Select-Object Name,ScreenHeight,ScreenWidth,Status | Format-List"], shell=True).decode().strip()
-        blocks = result.split("\n\n")
-        for block in blocks:
-            info = {}
-            for line in block.split("\n"):
-                if line.strip():
-                    key, value = line.split(":", 1)
-                    info[key.strip()] = value.strip()
-            if info:
-                monitor_info.append(info)
-    except Exception as e:
-        monitor_info.append({"Error": str(e)})
-    return monitor_info
 
 # Function to display all information
 def display_info():
