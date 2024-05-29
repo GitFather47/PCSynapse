@@ -3,4 +3,3 @@ psutil
 streamlit
 pandas
 wmi
-pywin32
