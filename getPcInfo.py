@@ -127,7 +127,7 @@ def get_disk_info():
             "File System Type": partition.fstype,
             "Total Space (GB)": f"{usage.total / (1024**3):.2f}",
             "Used Space (GB)": f"{usage.used / (1024**3):.2f}",
-            "Free Space (GB)": f"{usage.free / (1024**3):.2f}",
+            "Free Space (GB)": f"{free_space / (1024**3):.2f}",
             "Usage (%)": usage.percent
         }
         disk_info.append(disk_entry)
