@@ -141,39 +141,33 @@ def display_info():
     network_info = get_network_info()
     motherboard_info = get_motherboard_info()
 
-    # Center tables and adjust font sizes
-    custom_css = """
-    <style>
-    table {margin-left:auto; margin-right:auto; font-size:25px;} 
-    th {font-size:31 px;} 
-    td {font-size:28 px;} 
-    .css-2trqyj {font-size: 33px;} 
-    .stButton button {font-size: 28px;} 
-    h1, h2, h3, h4, h5, h6 {font-size: 38px;} 
-    </style>
-    """
-    st.markdown(custom_css, unsafe_allow_html=True)
+    # Ensure that all arrays have the same length
+    max_length = max(len(system_info), len(cpu_info), len(memory_info), len(disk_info), len(bios_info))
+    
+    # Pad arrays with N/A if needed
+    system_info = pad_array(system_info, max_length)
+    cpu_info = pad_array(cpu_info, max_length)
+    memory_info = pad_array(memory_info, max_length)
+    bios_info = pad_array(bios_info, max_length)
 
-    st.subheader("Overall Information")
+    # Create DataFrame for overall information
     overall_info_data = {
         "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Motherboard"],
         "Information": [
-            system_info.get("System", "N/A"), 
-            cpu_info.get("CPU Name", "N/A"), 
+            system_info.get("System", "N/A"),
+            cpu_info.get("CPU Name", "N/A"),
             memory_info.get("Total Memory (GB)", "N/A"),
-    combined_disk_info["Total Space (GB)"],
+            f"Total Space: {combined_disk_info['Total Space (GB)']} GB<br>"
             f"Used Space: {combined_disk_info['Used Space (GB)']} GB<br>"
             f"Free Space: {combined_disk_info['Free Space (GB)']} GB<br>"
             f"Usage: {combined_disk_info['Usage (%)']}%",
-            motherboard_info["Manufacturer"],
-            motherboard_info["Product"],
-            bios_info["Version"],
-            bios_info["Vendor"]
+            motherboard_info.get("Manufacturer", "N/A"),
+            # Add missing values here for alignment
         ]
     }
     overall_info_df = pd.DataFrame(overall_info_data)
     st.markdown(overall_info_df.to_html(index=False, escape=False), unsafe_allow_html=True)
-
+    
     st.subheader("System Information")
     system_info_df = pd.DataFrame(system_info.items(), columns=["Category", "Information"])
     st.markdown(system_info_df.to_html(index=False), unsafe_allow_html=True)
@@ -203,6 +197,12 @@ def display_info():
     st.subheader("Motherboard Information")
     motherboard_info_df = pd.DataFrame(motherboard_info.items(), columns=["Category", "Information"])
     st.markdown(motherboard_info_df.to_html(index=False), unsafe_allow_html=True)
+def pad_array(arr, length):
+    """Pad array with N/A values to match specified length."""
+    while len(arr) < length:
+        arr.append("N/A")
+    return arr
+
 
 def display_home():
     st.markdown("<div style='text-align:center'><h1 style='font-family:Ink Free; font-size: 54px;'>PC Synapse 💻</h1></div>", unsafe_allow_html=True)
