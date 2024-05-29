@@ -39,6 +39,7 @@ def get_system_info():
     }
 
 # Function to get CPU information
+# Function to get CPU information
 def get_cpu_info():
     try:
         cpu_info = cpuinfo.get_cpu_info()
@@ -56,8 +57,18 @@ def get_cpu_info():
         }
     except Exception as e:
         return {
+            "CPU Name": "N/A",
+            "Logical Processors": "N/A",
+            "Physical Processors": "N/A",
+            "Architecture": "N/A",
+            "Current Clock Speed": "N/A",
+            "Max Clock Speed": "N/A",
+            "L1 Cache": "N/A",
+            "L2 Cache": "N/A",
+            "L3 Cache": "N/A",
             "Error": str(e)
         }
+
 
 # Function to get memory information
 def get_memory_info():
