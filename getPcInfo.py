@@ -12,118 +12,21 @@ subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip
 import pandas as pd
 import streamlit as st
 
-# Function to get BIOS information (using subprocess for cross-platform compatibility)
-def get_bios_info():
-    bios_info = {"Category": [], "Information": []}
+# Conditional imports for Windows-specific packages
+if sys.platform == 'win32':
     try:
-        result = subprocess.check_output("dmidecode -t bios", shell=True).decode().strip()
-        lines = result.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith("Vendor:") or line.startswith("Version:"):
-                prop, _, value = line.partition(':')
-                bios_info["Category"].append(prop.strip())
-                bios_info["Information"].append(value.strip())
-    except Exception as e:
-        bios_info["Category"].extend(["Vendor", "Version"])
-        bios_info["Information"].extend([str(e)] * 2)
-    return bios_info
+        import ctypes
+        ctypes.windll.ole32.CoInitialize(None)
+        import win32com.client
+    except ImportError:
+        st.warning("Required Windows modules not found. Please ensure pywin32 is installed.")
 
-# Function to get audio information (using subprocess for cross-platform compatibility)
-def get_audio_info():
-    audio_info = {}
-    try:
-        result = subprocess.check_output("lspci -nn | grep -i audio", shell=True).decode().strip()
-        if result:
-            audio_info["Audio Device"] = result.split(':')[2].strip()
-        else:
-            audio_info["Audio Device"] = "N/A"
-    except Exception as e:
-        audio_info['Error'] = str(e)
-    return audio_info
-
-# Function to get motherboard information (using subprocess for cross-platform compatibility)
-def get_motherboard_info():
-    motherboard_info = {}
-    try:
-        result = subprocess.check_output("dmidecode -t baseboard", shell=True).decode().strip()
-        lines = result.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith("Manufacturer:") or line.startswith("Product:") or line.startswith("Version:"):
-                prop, _, value = line.partition(':')
-                motherboard_info[prop.strip()] = value.strip()
-    except Exception as e:
-        motherboard_info['Error'] = str(e)
-    return motherboard_info
-
-# Function to get connected peripherals (Mouse, Keyboard, etc.) (using subprocess for cross-platform compatibility)
-def get_peripherals_info():
-    peripherals_info = {}
-    try:
-        result = subprocess.check_output("lsusb", shell=True).decode().strip()
-        if result:
-            peripherals_info['Mouse'] = "Detected" if "Mouse" in result else "N/A"
-            peripherals_info['Keyboard'] = "Detected" if "Keyboard" in result else "N/A"
-        else:
-            peripherals_info['Mouse'] = "N/A"
-            peripherals_info['Keyboard'] = "N/A"
-    except Exception as e:
-        peripherals_info['Error'] = str(e)
-    return peripherals_info
-
-# Function to get video information (using subprocess for cross-platform compatibility)
-def get_video_info():
-    video_info = []
-    try:
-        result = subprocess.check_output("lspci -nn | grep -i vga", shell=True).decode().strip()
-        if result:
-            info = {}
-            info["Name"] = result.split(':')[2].strip()
-            video_info.append(info)
-        else:
-            video_info.append({"Error": "Video controller not found"})
-    except Exception as e:
-        video_info.append({"Error": str(e)})
-    return video_info
-
-# Function to get monitor information (using subprocess for cross-platform compatibility)
-def get_monitor_info():
-    monitor_info = []
-    try:
-        result = subprocess.check_output("xrandr --listmonitors", shell=True).decode().strip()
-        lines = result.split('\n')
-        for line in lines[1:]:
-            info = {}
-            values = line.split()
-            info["Name"] = values[3]
-            info["Screen Height"] = values[5]
-            info["Screen Width"] = values[7]
-            info["Status"] = values[8]
-            monitor_info.append(info)
-    except Exception as e:
-        monitor_info.append({"Error": str(e)})
-    return monitor_info
-
-# Continue with other functions and main application code
+# Your Streamlit app code here
 
 # Function to get system information
 def get_system_info():
     system_info = platform.uname()
     user_info = subprocess.check_output('whoami').decode().strip()
-    # Retrieve product ID (Windows specific)
-    product_id = ""
-    opengl_version = ""
-    try:
-        wmi_obj = wmi.WMI()
-        for os in wmi_obj.Win32_OperatingSystem():
-            product_id = os.SerialNumber
-            break
-        for item in wmi_obj.Win32_OperatingSystem():
-            directx_version = item.OSArchitecture
-            opengl_version = item.Version
-    except Exception as e:
-        product_id = str(e)
 
     return {
         "System": system_info.system,
@@ -132,29 +35,16 @@ def get_system_info():
         "Version": system_info.version,
         "Machine": system_info.machine,
         "Processor": system_info.processor,
-        "User Name": user_info,
-        "Product ID": product_id,  # Add product ID to the dictionary
-        "OpenGL Version": opengl_version  # Add OpenGL Version to the dictionary
+        "User Name": user_info
     }
-
 
 # Function to get CPU information
 def get_cpu_info():
     try:
         cpu_info = cpuinfo.get_cpu_info()
-        serial_number = ""
-        # Retrieving CPU serial number (Windows specific)
-        try:
-            wmi_obj = wmi.WMI()
-            for processor in wmi_obj.Win32_Processor():
-                serial_number = processor.ProcessorId
-                break
-        except Exception as e:
-            serial_number = str(e)
         
         return {
             "CPU Name": cpu_info.get('brand_raw', 'N/A'),
-            "Serial Number": serial_number,  # Add Serial Number to the dictionary
             "Logical Processors": psutil.cpu_count(logical=True),
             "Physical Processors": psutil.cpu_count(logical=False),
             "Architecture": cpu_info.get('arch', 'N/A'),
@@ -213,8 +103,13 @@ def get_disk_info():
 
     return disk_info, combined_info
 
-
-
+# Function to get BIOS information
+def get_bios_info():
+    bios_info = {
+        "Vendor": platform.system(),
+        "Version": platform.version()
+    }
+    return bios_info
 
 # Function to get network information
 def get_network_info():
@@ -231,6 +126,11 @@ def get_network_info():
                 formatted_net_info.setdefault(interface, {})["IP Address"] = addr.address
     return formatted_net_info
 
+# Function to get motherboard information
+def get_motherboard_info():
+    # For Linux systems, we can't retrieve specific motherboard information reliably
+    return {"Manufacturer": "N/A", "Product": "N/A", "Version": "N/A", "SerialNumber": "N/A"}
+
 # Function to display all information
 def display_info():
     system_info = get_system_info()
@@ -240,10 +140,6 @@ def display_info():
     bios_info = get_bios_info()
     network_info = get_network_info()
     motherboard_info = get_motherboard_info()
-    peripherals_info = get_peripherals_info()
-    video_info = get_video_info()
-    monitor_info = get_monitor_info()
-    audio_info = get_audio_info()
 
     # Center tables and adjust font sizes
     custom_css = """
@@ -260,19 +156,19 @@ def display_info():
 
     st.subheader("Overall Information")
     overall_info_data = {
-        "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Audio", "Motherboard", "Mouse", "Keyboard"],
+        "Category": ["Operating System", "Processor", "Memory", "Disk Storage", "Motherboard"],
         "Information": [
             system_info.get("System", "N/A"), 
             cpu_info.get("CPU Name", "N/A"), 
             memory_info.get("Total Memory (GB)", "N/A"), 
-            f"Total Space: {combined_disk_info['Total Space (GB)']} GB<br>"
+            Space: {combined_disk_info['Total Space (GB)']} GB<br>"
             f"Used Space: {combined_disk_info['Used Space (GB)']} GB<br>"
             f"Free Space: {combined_disk_info['Free Space (GB)']} GB<br>"
             f"Usage: {combined_disk_info['Usage (%)']}%",
-            audio_info.get("Audio Device", "N/A"), 
-            motherboard_info.get("Product", "N/A"), 
-            peripherals_info.get("Mouse", "N/A"),
-            peripherals_info.get("Keyboard", "N/A")
+            f"Manufacturer: {motherboard_info['Manufacturer']}<br>"
+            f"Product: {motherboard_info['Product']}<br>"
+            f"Version: {motherboard_info['Version']}<br>"
+            f"SerialNumber: {motherboard_info['SerialNumber']}"
         ]
     }
     overall_info_df = pd.DataFrame(overall_info_data)
@@ -307,20 +203,6 @@ def display_info():
     st.subheader("Motherboard Information")
     motherboard_info_df = pd.DataFrame(motherboard_info.items(), columns=["Category", "Information"])
     st.markdown(motherboard_info_df.to_html(index=False), unsafe_allow_html=True)
-
-    st.subheader("Peripherals Information")
-    peripherals_info_df = pd.DataFrame(peripherals_info.items(), columns=["Category", "Information"])
-    st.markdown(peripherals_info_df.to_html(index=False), unsafe_allow_html=True)
-
-    st.subheader("Video Information")
-    for video in video_info:
-        video_info_df = pd.DataFrame(video.items(), columns=["Category", "Information"])
-        st.markdown(video_info_df.to_html(index=False), unsafe_allow_html=True)
-
-    st.subheader("Monitor Information")
-    for monitor in monitor_info:
-        monitor_info_df = pd.DataFrame(monitor.items(), columns=["Category", "Information"])
-        st.markdown(monitor_info_df.to_html(index=False), unsafe_allow_html=True)
 
 def display_home():
     st.markdown("<div style='text-align:center'><h1 style='font-family:Ink Free; font-size: 54px;'>PC Synapse 💻</h1></div>", unsafe_allow_html=True)
@@ -362,3 +244,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
